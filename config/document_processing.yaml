@@ -1,0 +1,303 @@
+# ═══════════════════════════════════════════════════════════════════
+# Agent Evaluation Harness — Document Processing Configuration
+# ═══════════════════════════════════════════════════════════════════
+# Multi-step workflow: Document → Extract → Classify → Validate → Action
+# Showcases trajectory evaluation, sub-agent scoring, handoff integrity.
+
+metadata:
+  name: "Document Processing Pipeline Evaluation"
+  version: "1.0"
+  description: "Multi-step document processing workflow with extraction, classification, validation"
+  agent_type: "multi_agent"  # single_agent | multi_agent
+
+# ─── Databricks Environment ───
+environment:
+  catalog: "serverless_stable_06qfbz_catalog"
+  schema: "agent_eval"
+  llm_endpoint: "databricks-claude-sonnet-4-6"
+  strong_llm_endpoint: "databricks-claude-opus-4-6"
+  embedding_endpoint: "databricks-gte-large-en"
+
+# ─── Agent Configuration ───
+agent:
+  orchestrator:
+    type: "supervisor"
+    routing_logic: |
+      Route based on document type:
+      - invoice → extraction_agent → validation_agent → approval_agent
+      - contract → extraction_agent → compliance_agent → approval_agent
+      - support_email → classification_agent → routing_agent
+      High-value documents (> ₹10L) always go through compliance.
+
+  sub_agents:
+    - name: "extraction_agent"
+      role: "Extract structured fields from unstructured documents"
+      tools: ["ocr_extract", "table_parser", "entity_recognizer"]
+      output_schema:
+        - field: "document_type"
+          type: "string"
+        - field: "vendor_name"
+          type: "string"
+        - field: "amount"
+          type: "float"
+        - field: "date"
+          type: "date"
+        - field: "line_items"
+          type: "array"
+
+    - name: "classification_agent"
+      role: "Classify document category and urgency"
+      tools: ["classify_document"]
+      output_schema:
+        - field: "category"
+          type: "string"
+          allowed_values: ["invoice", "contract", "support_email", "compliance_doc", "unknown"]
+        - field: "urgency"
+          type: "string"
+          allowed_values: ["low", "medium", "high", "critical"]
+        - field: "confidence"
+          type: "float"
+
+    - name: "validation_agent"
+      role: "Validate extracted data against business rules"
+      tools: ["validate_vendor", "check_budget", "verify_amounts"]
+      output_schema:
+        - field: "is_valid"
+          type: "boolean"
+        - field: "validation_errors"
+          type: "array"
+        - field: "risk_flags"
+          type: "array"
+
+    - name: "compliance_agent"
+      role: "Check regulatory and compliance requirements"
+      tools: ["check_compliance_rules", "verify_signatures", "check_expiry"]
+      output_schema:
+        - field: "is_compliant"
+          type: "boolean"
+        - field: "compliance_issues"
+          type: "array"
+        - field: "requires_legal_review"
+          type: "boolean"
+
+    - name: "approval_agent"
+      role: "Make final decision (approve/reject/escalate)"
+      tools: ["approve_document", "reject_document", "escalate_document"]
+      output_schema:
+        - field: "decision"
+          type: "string"
+          allowed_values: ["approved", "rejected", "escalated"]
+        - field: "reasoning"
+          type: "string"
+        - field: "next_action"
+          type: "string"
+
+    - name: "routing_agent"
+      role: "Route support emails to appropriate team"
+      tools: ["route_to_team", "create_ticket"]
+      output_schema:
+        - field: "team"
+          type: "string"
+        - field: "priority"
+          type: "string"
+        - field: "ticket_id"
+          type: "string"
+
+# ─── Sample Data ───
+data:
+  tables:
+    - name: "documents"
+      description: "Sample documents (invoices, contracts, emails) with metadata"
+    - name: "vendors"
+      description: "Known vendor registry for validation"
+    - name: "compliance_rules"
+      description: "Business rules for document validation"
+    - name: "processing_history"
+      description: "Historical processing results for pattern analysis"
+
+# ─── Evaluation Configuration ───
+evaluation:
+  scorers:
+    # ── Layer 1: Orchestrator ──
+    - name: "routing_correctness"
+      type: "code"
+      layer: "orchestrator"
+      enabled: true
+      description: "Did the orchestrator route to the correct pipeline?"
+
+    - name: "agent_invocation_check"
+      type: "code"
+      layer: "orchestrator"
+      enabled: true
+      description: "Were the required sub-agents called?"
+
+    - name: "workflow_sequencing"
+      type: "code"
+      layer: "orchestrator"
+      enabled: true
+      description: "Were agents called in the correct order?"
+
+    # ── Layer 2: Sub-Agent ──
+    - name: "extraction_accuracy"
+      type: "code"
+      layer: "sub_agent"
+      enabled: true
+      description: "Field-level extraction accuracy (F1 score)"
+      config:
+        required_fields: ["document_type", "vendor_name", "amount", "date"]
+        fuzzy_match_threshold: 0.85
+
+    - name: "classification_accuracy"
+      type: "code"
+      layer: "sub_agent"
+      enabled: true
+      description: "Document classification correctness"
+
+    - name: "validation_completeness"
+      type: "code"
+      layer: "sub_agent"
+      enabled: true
+      description: "All business rules checked?"
+
+    - name: "reasoning_quality"
+      type: "llm_judge"
+      layer: "sub_agent"
+      enabled: true
+      description: "Quality of approval/rejection reasoning"
+
+    # ── Layer 3: Workflow ──
+    - name: "end_to_end_decision"
+      type: "code"
+      layer: "workflow"
+      enabled: true
+      description: "Final decision matches expected outcome"
+
+    - name: "handoff_integrity"
+      type: "code"
+      layer: "workflow"
+      enabled: true
+      description: "Context preserved across agent handoffs"
+
+    - name: "path_efficiency"
+      type: "code"
+      layer: "workflow"
+      enabled: true
+      description: "Minimum agents called for the task"
+      config:
+        max_agents_per_document_type:
+          invoice: 3
+          contract: 4
+          support_email: 2
+
+    - name: "latency_budget"
+      type: "code"
+      layer: "workflow"
+      enabled: true
+      config:
+        max_seconds:
+          invoice: 15
+          contract: 20
+          support_email: 10
+
+    # ── Layer 4: Safety ──
+    - name: "pii_leakage"
+      type: "code"
+      layer: "safety"
+      enabled: true
+
+    - name: "unauthorized_actions"
+      type: "code"
+      layer: "safety"
+      enabled: true
+      description: "No approvals without proper validation chain"
+
+    - name: "error_propagation"
+      type: "code"
+      layer: "safety"
+      enabled: true
+      description: "Sub-agent failures handled gracefully, not cascaded"
+
+  thresholds:
+    overall_pass_rate: 0.90
+    orchestrator_pass_rate: 0.95  # Routing must be near-perfect
+    security_pass_rate: 0.99
+    regression_tolerance: 0.02
+
+  dataset:
+    golden_set_size: 60
+    categories:
+      - name: "standard_invoice"
+        weight: 0.25
+      - name: "high_value_invoice"
+        weight: 0.15
+      - name: "standard_contract"
+        weight: 0.15
+      - name: "contract_with_compliance"
+        weight: 0.10
+      - name: "support_email"
+        weight: 0.15
+      - name: "malformed_document"
+        weight: 0.10
+      - name: "adversarial_input"
+        weight: 0.10
+
+# ─── Production Monitoring ───
+monitoring:
+  scorers:
+    - name: "routing_correctness"
+      sample_rate: 1.0
+    - name: "extraction_accuracy"
+      sample_rate: 0.5
+    - name: "end_to_end_decision"
+      sample_rate: 0.5
+    - name: "pii_leakage"
+      sample_rate: 1.0
+    - name: "unauthorized_actions"
+      sample_rate: 1.0
+
+  alerts:
+    - name: "routing_failure"
+      condition: "routing_failures > 0 in last 1 hour"
+      severity: "critical"
+    - name: "extraction_drift"
+      condition: "extraction_accuracy < 0.80 in last 6 hours"
+      severity: "warning"
+
+# ─── Optimization ───
+optimization:
+  strategies:
+    - name: "failure_targeted_patching"
+      enabled: true
+      scope: "per_agent"  # Optimize each sub-agent's prompt independently
+    - name: "few_shot_injection"
+      enabled: true
+      scope: "per_agent"
+    - name: "routing_rule_refinement"
+      enabled: true
+      scope: "orchestrator"  # Optimize routing logic specifically
+    - name: "constitutional_rewrite"
+      enabled: true
+      scope: "per_agent"
+
+  auto_optimize:
+    trigger: "pass_rate < 0.90 OR routing_failures > 3"
+    max_iterations: 3
+    require_human_approval: true
+
+# ─── Human Feedback ───
+feedback:
+  collection:
+    user_feedback: true
+    expert_review: true
+    expert_review_cadence: "weekly"
+
+  labeling_schemas:
+    - name: "extraction_accuracy"
+      type: "feedback"
+      options: ["Correct", "Partially Correct", "Incorrect"]
+    - name: "decision_accuracy"
+      type: "feedback"
+      options: ["Correct", "Wrong Decision", "Missing Context"]
+    - name: "expected_output"
+      type: "expectation"
+      input: "text"
