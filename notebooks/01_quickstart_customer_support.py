@@ -53,16 +53,31 @@ print(f"✅ Connected to {LLM_ENDPOINT}")
 
 # COMMAND ----------
 
+VS_INDEX = f"{FULL_SCHEMA}.knowledge_base_index"
+VS_ENDPOINT = "agent_eval_vs_endpoint"
+
 @mlflow.trace(span_type="RETRIEVER", name="search_knowledge_base")
 def search_knowledge_base(query: str) -> list:
-    """Search FAQ and policy knowledge base."""
-    # Simple keyword search (in production: use Vector Search)
-    df = spark.sql(f"""
-        SELECT kb_id, topic, title, content
-        FROM {FULL_SCHEMA}.knowledge_base
-        WHERE LOWER(content) LIKE LOWER('%{query.split()[0] if query.split() else ""}%')
-        LIMIT 3
-    """)
+    """Search knowledge base using Vector Search (with keyword fallback)."""
+    try:
+        from databricks.vector_search.client import VectorSearchClient
+        vsc = VectorSearchClient()
+        index = vsc.get_index(endpoint_name=VS_ENDPOINT, index_name=VS_INDEX)
+        vs_results = index.similarity_search(
+            query_text=query,
+            columns=["kb_id", "topic", "title", "content"],
+            num_results=3
+        )
+        rows = vs_results.get("result", {}).get("data_array", [])
+        if rows:
+            return [{"kb_id": r[0], "topic": r[1], "title": r[2], "content": r[3], "score": r[-1]} for r in rows]
+    except Exception as e:
+        pass  # Fallback to keyword search
+
+    # Keyword fallback
+    words = [w for w in query.split() if len(w) > 3][:2]
+    conditions = " OR ".join([f"LOWER(content) LIKE '%{w.lower()}%'" for w in words]) if words else "1=1"
+    df = spark.sql(f"SELECT kb_id, topic, title, content FROM {FULL_SCHEMA}.knowledge_base WHERE {conditions} LIMIT 3")
     return [row.asDict() for row in df.collect()]
 
 
