@@ -24,7 +24,7 @@ import json
 import re
 from openai import OpenAI
 
-CATALOG = "serverless_stable_06qfbz_catalog"
+CATALOG = "sarbanimaiti_catalog"
 SCHEMA = "agent_eval"
 FULL_SCHEMA = f"{CATALOG}.{SCHEMA}"
 LLM_ENDPOINT = "databricks-claude-sonnet-4-6"
@@ -54,7 +54,7 @@ print(f"✅ Connected to {LLM_ENDPOINT}")
 # COMMAND ----------
 
 VS_INDEX = f"{FULL_SCHEMA}.knowledge_base_index"
-VS_ENDPOINT = "agent_eval_vs_endpoint"
+VS_ENDPOINT = "one-env-shared-endpoint-11"
 
 @mlflow.trace(span_type="RETRIEVER", name="search_knowledge_base")
 def search_knowledge_base(query: str) -> list:

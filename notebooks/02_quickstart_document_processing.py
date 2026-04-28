@@ -21,7 +21,7 @@ from dataclasses import dataclass, field, asdict
 from typing import List, Dict
 from openai import OpenAI
 
-CATALOG = "serverless_stable_06qfbz_catalog"
+CATALOG = "sarbanimaiti_catalog"
 SCHEMA = "agent_eval"
 FULL_SCHEMA = f"{CATALOG}.{SCHEMA}"
 LLM_ENDPOINT = "databricks-claude-sonnet-4-6"
