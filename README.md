@@ -78,7 +78,7 @@ Results appear in the MLflow experiment with:
 
 ## How the Continuous Optimization Loop Works
 
-The harness implements a **closed evaluation-optimization loop** that mirrors what Databricks Agent Bricks does automatically — but for custom agents.
+The harness implements a **closed evaluation-optimization loop**.
 
 ### The Loop (in the notebook)
 
