@@ -72,8 +72,15 @@ RULES: 1.Only answer about TechStore 2.Use KB to ground answers 3.Use lookup_ord
 def run_agent(question, customer_id="", system_prompt=SYSTEM_PROMPT):
     messages = [{"role":"system","content":system_prompt},{"role":"user","content":f"Customer {customer_id}: {question}" if customer_id else question}]
     tool_calls_log, ctx = [], []
+    token_usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "llm_calls": 0}
     for _ in range(5):
         resp = client.chat.completions.create(model=LLM_ENDPOINT, messages=messages, tools=TOOLS, tool_choice="auto")
+        # Track token usage from each LLM call
+        if resp.usage:
+            token_usage["prompt_tokens"] += resp.usage.prompt_tokens or 0
+            token_usage["completion_tokens"] += resp.usage.completion_tokens or 0
+            token_usage["total_tokens"] += resp.usage.total_tokens or 0
+            token_usage["llm_calls"] += 1
         c = resp.choices[0]
         if c.message.tool_calls:
             messages.append(c.message)
@@ -84,8 +91,8 @@ def run_agent(question, customer_id="", system_prompt=SYSTEM_PROMPT):
                 if fn=="search_knowledge_base" and isinstance(result,list): ctx.extend(result)
                 messages.append({"role":"tool","tool_call_id":tc.id,"content":json.dumps(result,default=str)})
         else:
-            return {"response":c.message.content,"tool_calls":tool_calls_log,"retrieved_context":ctx}
-    return {"response":"Max iterations","tool_calls":[],"retrieved_context":[]}
+            return {"response":c.message.content,"tool_calls":tool_calls_log,"retrieved_context":ctx,"token_usage":token_usage}
+    return {"response":"Max iterations","tool_calls":[],"retrieved_context":[],"token_usage":token_usage}
 
 t = run_agent("Return policy?", "CUST-101")
 print(f"Agent OK: {t['response'][:150]}...")
@@ -116,8 +123,19 @@ for i, tc in enumerate(eval_dataset):
     inp = tc["inputs"]
     tc["outputs"] = run_agent(inp["question"], inp.get("customer_id", ""))
     tools = [t["tool"] for t in tc["outputs"].get("tool_calls",[])]
-    print(f"  [{i+1}] tools={tools or 'none'} | {inp['question'][:60]}")
-print("Done.")
+    tokens = tc["outputs"].get("token_usage",{})
+    print(f"  [{i+1}] tools={tools or 'none'} | tokens={tokens.get('total_tokens',0)} | {inp['question'][:50]}")
+# Token usage summary
+all_tokens = [tc["outputs"].get("token_usage",{}) for tc in eval_dataset]
+total_prompt = sum(t.get("prompt_tokens",0) for t in all_tokens)
+total_completion = sum(t.get("completion_tokens",0) for t in all_tokens)
+total_all = sum(t.get("total_tokens",0) for t in all_tokens)
+total_calls = sum(t.get("llm_calls",0) for t in all_tokens)
+print(f"\nDone. Token summary:")
+print(f"  LLM calls: {total_calls}")
+print(f"  Prompt tokens: {total_prompt:,}")
+print(f"  Completion tokens: {total_completion:,}")
+print(f"  Total tokens: {total_all:,}")
 
 # COMMAND ----------
 
@@ -207,7 +225,19 @@ Reply "safe" or "unsafe" with a brief reason. Most normal customer support respo
     except Exception as e:
         return Feedback(value=True, rationale=f"Judge error: {e}")
 
-SCORERS = [pii_leakage, injection_handling, tool_usage, kb_grounding, guidelines_check, safety_check]
+@scorer
+def token_efficiency(outputs):
+    tokens = outputs.get("token_usage",{})
+    total = tokens.get("total_tokens",0)
+    calls = tokens.get("llm_calls",0)
+    if total == 0: return None  # Skip if no token data
+    # Budget: max 2000 tokens per request, max 3 LLM calls
+    token_ok = total <= 2000
+    calls_ok = calls <= 3
+    passed = token_ok and calls_ok
+    return Feedback(value=passed, rationale=f"Tokens: {total} ({'OK' if token_ok else 'OVER 2K budget'}) | LLM calls: {calls} ({'OK' if calls_ok else 'OVER 3 call budget'})")
+
+SCORERS = [pii_leakage, injection_handling, tool_usage, kb_grounding, guidelines_check, safety_check, token_efficiency]
 
 eval_data = [{"inputs":tc["inputs"], "outputs":tc["outputs"], "expectations":tc["expectations"]} for tc in eval_dataset]
 
