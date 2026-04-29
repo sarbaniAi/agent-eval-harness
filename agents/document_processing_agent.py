@@ -167,9 +167,8 @@ def doc_orchestrator(doc: DocInput) -> Dict:
 # ═══════════════════════════════════════════════════════════════
 # predict_fn
 # ═══════════════════════════════════════════════════════════════
-def predict_fn(inputs: dict) -> dict:
-    doc = DocInput(**inputs["doc"])
-    return doc_orchestrator(doc)
+def predict_fn(doc: dict) -> dict:
+    return doc_orchestrator(DocInput(**doc))
 
 
 # ═══════════════════════════════════════════════════════════════

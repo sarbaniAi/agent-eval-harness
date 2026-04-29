@@ -1,0 +1,31 @@
+bundle:
+  name: agent-eval-harness
+
+workspace:
+  host: https://adb-984752964297111.11.azuredatabricks.net
+
+resources:
+  jobs:
+    eval_customer_support:
+      name: "Agent Eval — Customer Support"
+      tasks:
+        - task_key: run_evaluation
+          notebook_task:
+            notebook_path: ./harness/run_evaluation.py
+          new_cluster:
+            spark_version: "16.2.x-cpu-ml-scala2.12"
+            num_workers: 0
+            node_type_id: "Standard_DS3_v2"
+            data_security_mode: SINGLE_USER
+            single_user_name: "sarbani.maiti@databricks.com"
+          libraries:
+            - pypi:
+                package: "mlflow[databricks]>=3.0"
+            - pypi:
+                package: "databricks-vectorsearch"
+
+targets:
+  dev:
+    default: true
+    workspace:
+      host: https://adb-984752964297111.11.azuredatabricks.net

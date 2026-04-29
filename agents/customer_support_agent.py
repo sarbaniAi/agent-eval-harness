@@ -164,11 +164,8 @@ def _run_agent(question: str, customer_id: str = "", system_prompt: str = SYSTEM
 # ═══════════════════════════════════════════════════════════════
 # predict_fn — Takes inputs dict, returns outputs dict
 # ═══════════════════════════════════════════════════════════════
-def predict_fn(inputs: dict) -> dict:
-    return _run_agent(
-        question=inputs["question"],
-        customer_id=inputs.get("customer_id", "")
-    )
+def predict_fn(question: str, customer_id: str = "") -> dict:
+    return _run_agent(question=question, customer_id=customer_id)
 
 
 # ═══════════════════════════════════════════════════════════════
