@@ -24,7 +24,7 @@ import json
 import re
 from openai import OpenAI
 
-CATALOG = "sarbanimaiti_catalog"
+CATALOG = "your_catalog"
 SCHEMA = "agent_eval"
 FULL_SCHEMA = f"{CATALOG}.{SCHEMA}"
 LLM_ENDPOINT = "databricks-claude-sonnet-4-6"
@@ -32,7 +32,7 @@ LLM_ENDPOINT = "databricks-claude-sonnet-4-6"
 spark.sql(f"USE CATALOG {CATALOG}")
 spark.sql(f"USE SCHEMA {SCHEMA}")
 
-mlflow.set_experiment("/Users/sarbani.maiti@databricks.com/agent-eval-harness/customer-support")
+mlflow.set_experiment("/Users/<your-email>/agent-eval-harness/customer-support")
 mlflow.openai.autolog()
 
 workspace_url = spark.conf.get("spark.databricks.workspaceUrl")
@@ -54,7 +54,7 @@ print(f"✅ Connected to {LLM_ENDPOINT}")
 # COMMAND ----------
 
 VS_INDEX = f"{FULL_SCHEMA}.knowledge_base_index"
-VS_ENDPOINT = "one-env-shared-endpoint-11"
+VS_ENDPOINT = "your_vs_endpoint"
 
 @mlflow.trace(span_type="RETRIEVER", name="search_knowledge_base")
 def search_knowledge_base(query: str) -> list:

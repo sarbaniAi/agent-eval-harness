@@ -21,14 +21,14 @@ from dataclasses import dataclass, field, asdict
 from typing import List, Dict
 from openai import OpenAI
 
-CATALOG = "sarbanimaiti_catalog"
+CATALOG = "your_catalog"
 SCHEMA = "agent_eval"
 FULL_SCHEMA = f"{CATALOG}.{SCHEMA}"
 LLM_ENDPOINT = "databricks-claude-sonnet-4-6"
 
 spark.sql(f"USE CATALOG {CATALOG}")
 spark.sql(f"USE SCHEMA {SCHEMA}")
-mlflow.set_experiment("/Users/sarbani.maiti@databricks.com/agent-eval-harness/document-processing")
+mlflow.set_experiment("/Users/<your-email>/agent-eval-harness/document-processing")
 mlflow.openai.autolog()
 
 workspace_url = spark.conf.get("spark.databricks.workspaceUrl")

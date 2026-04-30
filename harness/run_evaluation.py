@@ -12,15 +12,15 @@ from openai import OpenAI
 from mlflow.genai.scorers import scorer
 from mlflow.entities import Feedback
 
-CATALOG = "sarbanimaiti_catalog"
+CATALOG = "your_catalog"
 SCHEMA = "agent_eval"
 FULL_SCHEMA = f"{CATALOG}.{SCHEMA}"
 LLM_ENDPOINT = "databricks-claude-sonnet-4-6"
-VS_ENDPOINT = "one-env-shared-endpoint-11"
+VS_ENDPOINT = "your_vs_endpoint"
 VS_INDEX = f"{FULL_SCHEMA}.knowledge_base_index"
 spark.sql(f"USE CATALOG {CATALOG}")
 spark.sql(f"USE SCHEMA {SCHEMA}")
-mlflow.set_experiment("/Users/sarbani.maiti@databricks.com/agent-eval-harness/customer-support-eval")
+mlflow.set_experiment("/Users/your-email@company.com/agent-eval-harness/customer-support-eval")
 
 workspace_url = spark.conf.get("spark.databricks.workspaceUrl")
 if not workspace_url.startswith("http"):

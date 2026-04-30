@@ -31,9 +31,9 @@ Run the SQL setup to create tables and sample data. The notebook `00_install_set
 ```
 
 **Current setup:**
-- Catalog: `sarbanimaiti_catalog`
+- Catalog: `your_catalog`
 - Schema: `agent_eval`
-- Vector Search: `one-env-shared-endpoint-11` → `knowledge_base_index` (14 docs)
+- Vector Search: `<your-vs-endpoint>` → `knowledge_base_index` (14 docs)
 
 ### Step 2: Run Evaluation
 
@@ -180,10 +180,10 @@ MLflow 3.0's `evaluate()` patches the OpenAI client for tracing. When the agent 
 ### Test 1: Run the full harness
 ```bash
 # Submit as a job
-databricks api post /api/2.1/jobs/runs/submit --profile sarbani-azure --json '<see Step 2 above>'
+databricks api post /api/2.1/jobs/runs/submit --profile <your-profile> --json '<see Step 2 above>'
 
 # Check results in MLflow experiment:
-# /Users/sarbani.maiti@databricks.com/agent-eval-harness/customer-support-eval
+# /Users/<your-email>/agent-eval-harness/customer-support-eval
 ```
 
 ### Test 2: Verify scorers work

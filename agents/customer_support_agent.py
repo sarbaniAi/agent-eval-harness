@@ -27,10 +27,10 @@ from openai import OpenAI
 # ═══════════════════════════════════════════════
 # EDIT THESE for your workspace
 # ═══════════════════════════════════════════════
-CATALOG = "sarbanimaiti_catalog"
+CATALOG = "your_catalog"
 SCHEMA = "agent_eval"
 LLM_ENDPOINT = "databricks-claude-sonnet-4-6"
-VS_ENDPOINT = "one-env-shared-endpoint-11"
+VS_ENDPOINT = "your_vs_endpoint"
 # ═══════════════════════════════════════════════
 
 FULL_SCHEMA = f"{CATALOG}.{SCHEMA}"

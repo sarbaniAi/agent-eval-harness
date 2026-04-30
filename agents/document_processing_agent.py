@@ -26,7 +26,7 @@ from openai import OpenAI
 # ═══════════════════════════════════════════════
 # EDIT THESE for your workspace
 # ═══════════════════════════════════════════════
-CATALOG = "sarbanimaiti_catalog"
+CATALOG = "your_catalog"
 SCHEMA = "agent_eval"
 LLM_ENDPOINT = "databricks-claude-sonnet-4-6"
 # ═══════════════════════════════════════════════

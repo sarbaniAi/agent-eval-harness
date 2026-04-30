@@ -2,7 +2,7 @@ bundle:
   name: agent-eval-harness
 
 workspace:
-  host: https://adb-984752964297111.11.azuredatabricks.net
+  host: https://<your-workspace-url>
 
 resources:
   jobs:
@@ -17,7 +17,7 @@ resources:
             num_workers: 0
             node_type_id: "Standard_DS3_v2"
             data_security_mode: SINGLE_USER
-            single_user_name: "sarbani.maiti@databricks.com"
+            single_user_name: "your-email@company.com"
           libraries:
             - pypi:
                 package: "mlflow[databricks]>=3.0"
@@ -28,4 +28,4 @@ targets:
   dev:
     default: true
     workspace:
-      host: https://adb-984752964297111.11.azuredatabricks.net
+      host: https://<your-workspace-url>

@@ -12,8 +12,8 @@ env:
   - name: SERVING_ENDPOINT
     value: databricks-claude-sonnet-4-6
   - name: CATALOG
-    value: sarbanimaiti_catalog
+    value: your_catalog
   - name: SCHEMA
     value: agent_eval
   - name: VS_ENDPOINT
-    value: one-env-shared-endpoint-11
+    value: your_vs_endpoint

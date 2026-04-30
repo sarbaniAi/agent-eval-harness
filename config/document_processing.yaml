@@ -12,7 +12,7 @@ metadata:
 
 # ─── Databricks Environment ───
 environment:
-  catalog: "sarbanimaiti_catalog"
+  catalog: "your_catalog"
   schema: "agent_eval"
   llm_endpoint: "databricks-claude-sonnet-4-6"
   strong_llm_endpoint: "databricks-claude-opus-4-6"
